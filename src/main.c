@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-#define Levels 12
-#define Classes 10
-#define TelephoneLength 11
-#define NumOfGrades 10
-
-#define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students.txt"
+#include "macros.h"
 
 struct Student {
     char *first_name;
@@ -40,7 +31,7 @@ struct Course {
     struct GradeNode *grades[Levels][Classes][NumOfGrades];
 };
 
-struct StudentNode* addStudent(struct School *school, char *firstName, char *lastName, char *telephone, int level, int class, int *grades) {
+struct StudentNode *addStudent(struct School *school, char *firstName, char *lastName, char *telephone, int level, int class, int *grades) {
     struct StudentNode *studentForGrade;
     if (school->students[level][class] == NULL) {
         // If there are no students for the given level and class, add the new student as the first student.
@@ -63,9 +54,10 @@ struct StudentNode* addStudent(struct School *school, char *firstName, char *las
     return studentForGrade;
 }
 
-void addStudentGrades(struct Course *courses, struct School *school, struct StudentNode* studentForGrade, int level, int class, const int *grades) {
-    for(int i = 0; i < NumOfGrades; i++) {
-        if(courses->grades[level][class][i] == NULL) {
+void addStudentGrades(struct Course *courses, struct School *school, struct StudentNode *studentForGrade, int level,
+                      int class, const int *grades) {
+    for (int i = 0; i < NumOfGrades; i++) {
+        if (courses->grades[level][class][i] == NULL) {
             courses->grades[level][class][i] = malloc(sizeof(struct GradeNode));
             courses->grades[level][class][i]->grade.grade = grades[i];
             courses->grades[level][class][i]->grade.student = studentForGrade;
@@ -97,8 +89,10 @@ void readData(struct School *school, struct Course *courses) {
     char firstName[100], lastName[100], telephone[11];
     int level, class, grades[NumOfGrades];
 
-    while (fscanf(filePointer, "%s %s %s %d %d %d %d %d %d %d %d %d %d %d %d", firstName, lastName, telephone, &level, &class,
-    &grades[0], &grades[1], &grades[2], &grades[3], &grades[4], &grades[5], &grades[6], &grades[7], &grades[8], &grades[9]) == 15) {
+    while (fscanf(filePointer, "%s %s %s %d %d %d %d %d %d %d %d %d %d %d %d", firstName, lastName, telephone, &level,
+                  &class,
+                  &grades[0], &grades[1], &grades[2], &grades[3], &grades[4], &grades[5], &grades[6], &grades[7],
+                  &grades[8], &grades[9]) == 15) {
 
         struct StudentNode *studentForGrade;
         studentForGrade = addStudent(school, firstName, lastName, telephone, level, class, grades);
@@ -127,7 +121,7 @@ void printStudents(struct School school) {
     for (int level = 0; level < Levels; level++) {
         for (int class = 0; class < Classes; class++) {
             struct StudentNode *node = school.students[level][class];
-            if(node == NULL) {
+            if (node == NULL) {
                 continue;
             }
             while (node != NULL) {
@@ -144,6 +138,86 @@ void printStudents(struct School school) {
         }
     }
 }
+
+void deleteStudent(struct School *school, struct Course *courses, int level, int class, char *telephone) {
+    struct StudentNode *current = school->students[level][class];
+    struct StudentNode *prev = NULL;
+
+    // Find the student in the student list
+    while (current != NULL) {
+        if (strcmp(current->student.telephone, telephone) == 0) {
+            // Remove the student from the student list
+            if (prev == NULL) {
+                // If the student is the first one in the list
+                school->students[level][class] = current->next;
+            } else {
+                prev->next = current->next;
+            }
+
+            // Free the memory for the removed student's first_name and last_name
+            free(current->student.first_name);
+            free(current->student.last_name);
+
+            // Free the memory for the student node
+            free(current);
+
+            // Remove the student's grades from the courses
+            for (int i = 0; i < NumOfGrades; i++) {
+                struct GradeNode *gradeNode = courses->grades[level][class][i];
+                struct GradeNode *prevGrade = NULL;
+
+                while (gradeNode != NULL) {
+                    if (gradeNode->grade.student == current) {
+                        if (prevGrade == NULL) {
+                            // If the grade node is the first one in the list
+                            courses->grades[level][class][i] = gradeNode->next;
+                        } else {
+                            prevGrade->next = gradeNode->next;
+                        }
+                        free(gradeNode);
+                        break; // No need to continue searching for the same student's grades
+                    }
+
+                    prevGrade = gradeNode;
+                    gradeNode = gradeNode->next;
+                }
+            }
+
+            return; // Exit the function after deleting the student
+        }
+
+        prev = current;
+        current = current->next;
+    }
+
+    printf("Student not found.\n");
+}
+
+void deleteStudentFromUser(struct School *school, struct Course *courses) {
+    printf("Enter the student's level: ");
+    int level;
+    scanf("%d", &level);
+    printf("Enter the student's class: ");
+    int class;
+    scanf("%d", &class);
+    printf("Enter the student's telephone: ");
+    char telephone[TelephoneLength];
+    scanf("%s", telephone);
+
+    deleteStudent(school, courses, level, class, telephone);
+}
+
+void printMenu() {
+    printf("\nMenu:\n");
+    printf("0: Print all students\n");
+    printf("1: Add student\n");
+    printf("2: Delete student\n");
+    printf("3: Update student\n");
+    printf("4: Search student\n");
+    printf("5: Exit\n");
+    printf("Enter your choice: ");
+}
+
 
 void addNewStudentFromUser(struct School *school, struct Course *courses) {
     printf("Enter the student's first name: ");
@@ -163,7 +237,7 @@ void addNewStudentFromUser(struct School *school, struct Course *courses) {
     scanf("%d", &class);
     printf("Enter the student's grades: ");
     int grades[NumOfGrades];
-    for(int i = 0; i < NumOfGrades; i++) {
+    for (int i = 0; i < NumOfGrades; i++) {
         scanf("%d", &grades[i]);
     }
     struct StudentNode *studentForGrade;
@@ -175,53 +249,56 @@ void addNewStudentFromUser(struct School *school, struct Course *courses) {
 int main() {
     struct School school;
     struct Course courses;
-
-    // Read the data from the file
     readData(&school, &courses);
 
-    // Print all students
-    printStudents(school);
+    int choice;
+    while (1) {
+        printMenu();
+        scanf("%d", &choice);
 
-    addNewStudentFromUser(&school, &courses);
-
-    printStudents(school);
-
-//    // print courses grades
-//    for(int i = 0; i < 3; i++) {
-//        for(int j = 0; j < 3; j++) {
-//            for(int k = 0; k < 3; k++) {
-//                struct GradeNode *node = courses.grades[i][j][k];
-//                printf("Level: %d, Class: %d, Grades: ", i, j);
-//                while(node != NULL) {
-//                    printf("%d ", node->grade.grade);
-//                    node = node->next;
-//                }
-//                printf("\n\n");
-//            }
-//        }
-//    }
-
-    // Free the memory for all students
-    for (int i = 0; i < Levels; i++) {
-        for (int j = 0; j < Classes; j++) {
-            struct StudentNode *node = school.students[i][j];
-            freeStudentList(node);
-            school.students[i][j] = NULL; // Reset the pointer to NULL
-        }
-    }
-
-    for(int i = 0; i < Levels; i++) {
-        for(int j = 0; j < Classes; j++) {
-            for(int k = 0; k < NumOfGrades; k++) {
-                struct GradeNode *node = courses.grades[i][j][k];
-                while(node != NULL) {
-                    struct GradeNode *temp = node;
-                    node = node->next;
-                    free(temp);
+        switch (choice) {
+            case OPTION_PRINT_STUDENTS:
+                printStudents(school);
+                break;
+            case OPTION_ADD_STUDENT:
+                addNewStudentFromUser(&school, &courses);
+                break;
+            case OPTION_DELETE_STUDENT:
+                deleteStudentFromUser(&school, &courses);
+                break;
+            case OPTION_UPDATE_STUDENT:
+                // Implement update student function
+                printf("Update student function not implemented yet.\n");
+                break;
+            case OPTION_SEARCH_STUDENT:
+                // Implement search student function
+                printf("Search student function not implemented yet.\n");
+                break;
+            case OPTION_EXIT:
+                // Free memory and exit
+                for (int i = 0; i < Levels; i++) {
+                    for (int j = 0; j < Classes; j++) {
+                        struct StudentNode *node = school.students[i][j];
+                        freeStudentList(node);
+                        school.students[i][j] = NULL;
+                    }
                 }
-            }
+
+                for (int i = 0; i < Levels; i++) {
+                    for (int j = 0; j < Classes; j++) {
+                        for (int k = 0; k < NumOfGrades; k++) {
+                            struct GradeNode *node = courses.grades[i][j][k];
+                            while (node != NULL) {
+                                struct GradeNode *temp = node;
+                                node = node->next;
+                                free(temp);
+                            }
+                        }
+                    }
+                }
+                return 0;
+            default:
+                printf("Invalid choice. Please try again.\n");
         }
     }
-
-    return 0;
 }
