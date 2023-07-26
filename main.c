@@ -4,7 +4,7 @@
 
 #define Levels 12
 #define Classes 10
-#define TelephoneLength 10
+#define TelephoneLength 11
 #define NumOfGrades 10
 
 #define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students.txt"
@@ -37,92 +37,138 @@ struct GradeNode {
 
 struct Course {
     char *name;
-    struct GradeNode *grades[Levels][Classes];
+    struct GradeNode *grades[Levels][Classes][NumOfGrades];
 };
 
-int main() {
-    struct School school;
+void readData(struct School *school, struct Course *courses) {
+    memset(school->students, 0, sizeof(school->students));
+    memset(courses->grades, 0, sizeof(courses->grades));
 
     FILE *filePointer;
     filePointer = fopen(FILE_NAME, "r");
 
     if (filePointer == NULL) {
         printf("Error opening the file.\n");
-        return 1;
+        return;
     }
 
     char firstName[100], lastName[100], telephone[11];
     int level, class, grades[NumOfGrades];
 
-    while (fscanf(filePointer, "%s %s %s %d %d", firstName, lastName, telephone, &level, &class) == 5) {
-        // Combine first name and last name to form the full name
-        char *fullName = malloc(strlen(firstName) + strlen(lastName) + 2);
-        strcpy(fullName, firstName);
-        strcat(fullName, " ");
-        strcat(fullName, lastName);
+    while (fscanf(filePointer, "%s %s %s %d %d %d %d %d %d %d %d %d %d %d %d", firstName, lastName, telephone, &level, &class,
+    &grades[0], &grades[1], &grades[2], &grades[3], &grades[4], &grades[5], &grades[6], &grades[7], &grades[8], &grades[9]) == 15) {
 
-        // Read the 10 grades and store them in the student's grades array
-        for (int i = 0; i < NumOfGrades; i++) {
-            fscanf(filePointer, "%d", &grades[i]);
+        struct StudentNode *studentForGrade;
+        if (school->students[level][class] == NULL) {
+            // If there are no students for the given level and class, add the new student as the first student.
+            school->students[level][class] = malloc(sizeof(struct StudentNode));
+            school->students[level][class]->student.first_name = strdup(firstName);
+            school->students[level][class]->student.last_name = strdup(lastName);
+            strcpy(school->students[level][class]->student.telephone, telephone);
+            school->students[level][class]->next = NULL; // Set next to NULL as this is the only student for now.
+            studentForGrade = school->students[level][class]; // Set the studentForGrade to the first student.
+        } else {
+            // If there are existing students, create a new student node and link it to the current first student.
+            struct StudentNode *newStudent = malloc(sizeof(struct StudentNode));
+            newStudent->student.first_name = strdup(firstName);
+            newStudent->student.last_name = strdup(lastName);
+            strcpy(newStudent->student.telephone, telephone);
+            newStudent->next = school->students[level][class];
+            school->students[level][class] = newStudent; // Update the first student to be the new student.
+            studentForGrade = newStudent; // Set the studentForGrade to the new student.
         }
 
-        printf("Name: %s\n", fullName);
-        printf("Telephone: %s\n", telephone);
-        printf("Level: %d\n", level);
-        printf("Grades: ");
-        for (int i = 0; i < 10; i++) {
-            printf("%d ", grades[i]);
+        for(int i = 0; i < NumOfGrades; i++) {
+            if(courses->grades[level][class][i] == NULL) {
+                courses->grades[level][class][i] = malloc(sizeof(struct GradeNode));
+                courses->grades[level][class][i]->grade.grade = grades[i];
+                courses->grades[level][class][i]->grade.student = studentForGrade;
+                courses->grades[level][class][i]->next = NULL;
+                school->students[level][class]->student.grades[i] = courses->grades[level][class][i];
+            } else {
+                struct GradeNode *newGrade = malloc(sizeof(struct GradeNode));
+                newGrade->grade.grade = grades[i];
+                newGrade->grade.student = studentForGrade;
+                newGrade->next = courses->grades[level][class][i];
+                courses->grades[level][class][i] = newGrade;
+                school->students[level][class]->student.grades[i] = newGrade;
+            }
         }
-        printf("\n\n");
+    }
+    fclose(filePointer);
+}
 
-        free(fullName); // Don't forget to free dynamically allocated memory
+
+// Function to free memory for the linked list of students
+void freeStudentList(struct StudentNode *node) {
+    while (node != NULL) {
+        struct StudentNode *temp = node;
+        node = node->next;
+
+        // Free first_name and last_name strings
+        free(temp->student.first_name);
+        free(temp->student.last_name);
+
+        // Free the node itself
+        free(temp);
+    }
+}
+
+void printStudents(struct School school) {
+    for (int level = 0; level < Levels; level++) {
+        for (int class = 0; class < Classes; class++) {
+            struct StudentNode *node = school.students[level][class];
+            if(node == NULL) {
+                continue;
+            }
+            while (node != NULL) {
+                printf("Name: %s %s\n", node->student.first_name, node->student.last_name);
+                printf("Telephone: %s\n", node->student.telephone);
+                printf("Level: %d\n", level);
+                printf("Class: %d\n", class);
+                for (int i = 0; i < NumOfGrades; i++) {
+                    printf("%d ", node->student.grades[i]->grade.grade);
+                }
+                printf("\n\n");
+                node = node->next;
+            }
+        }
+    }
+}
 
 
-//        // Create a new student node and populate the student information
-//        struct StudentNode *newNode = malloc(sizeof(struct StudentNode));
-//        newNode->student.first_name = fullName;
-//        newNode->student.last_name = lastName;
-//        strcpy(newNode->student.telephone, telephone);
-//
-//        // Read the 10 grades and store them in the student's grades array
-//        for (int i = 0; i < 10; i++) {
-//            fscanf(filePointer, "%d", &grades[i]);
-//
-//            // Create a new grade node for each grade and link it to the student's grades array
-//            struct GradeNode *newGradeNode = malloc(sizeof(struct GradeNode));
-//            newGradeNode->grade.grade = grades[i];
-//            newGradeNode->grade.student = newNode;
-//            newGradeNode->next = NULL;
-//
-//            // Link the grade node to the student's grades array
-//            newNode->student.grades[i] = newGradeNode;
-//        }
-//
-//        newNode->next = school.students[level][0]; // For this example, we assume class is always 0
-//        school.students[level][0] = newNode; // For this example, we assume class is always 0
+
+int main() {
+    struct School school;
+    struct Course courses;
+
+    // Read the data from the file
+    readData(&school, &courses);
+
+    // Print all students
+    printStudents(school);
+
+    // Free the memory for all students
+    for (int i = 0; i < Levels; i++) {
+        for (int j = 0; j < Classes; j++) {
+            struct StudentNode *node = school.students[i][j];
+            freeStudentList(node);
+            school.students[i][j] = NULL; // Reset the pointer to NULL
+        }
     }
 
-    fclose(filePointer);
-
-//    // Print the data to verify it's correctly stored
-//    for (int level = 0; level < Levels; level++) {
-//        for (int class = 0; class < Classes; class++) {
-//            struct StudentNode *currentStudent = school.students[level][class];
-//            while (currentStudent != NULL) {
-//                printf("Name: %s\n", currentStudent->student.first_name);
-//                printf("Telephone: %s\n", currentStudent->student.telephone);
-//                printf("Grades: ");
-//                for (int i = 0; i < 10; i++) {
-//                    printf("%d ", currentStudent->student.grades[i]->grade.grade);
-//                }
-//                printf("\n\n");
-//                currentStudent = currentStudent->next;
-//            }
-//        }
-//    }
-
-    // Don't forget to free the allocated memory when you're done using it.
-    // In a real program, make sure to deallocate the memory properly.
+    for(int i = 0; i < Levels; i++) {
+        for(int j = 0; j < Classes; j++) {
+            for(int k = 0; k < NumOfGrades; k++) {
+                struct GradeNode *node = courses.grades[i][j][k];
+                while(node != NULL) {
+                    struct GradeNode *temp = node;
+                    node = node->next;
+                    free(temp);
+                }
+            }
+        }
+    }
 
     return 0;
 }
