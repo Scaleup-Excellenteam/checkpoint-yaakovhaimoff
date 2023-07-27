@@ -8,16 +8,7 @@
 #define Classes 10
 #define TelephoneLength 11
 #define NumOfGrades 10
-#define MATH 0
-#define ENGLISH 1
-#define SCIENCE 2
-#define HISTORY 3
-#define PHYSICS 4
-#define CHEMISTRY 5
-#define BIOLOGY 6
-#define COMPUTER_SCIENCE 7
-#define LITERATURE 8
-#define ART 9
+#define NameLength 100
 
 #define OPTION_PRINT_STUDENTS 0
 #define OPTION_ADD_STUDENT 1
@@ -27,3 +18,30 @@
 #define OPTION_EXIT 5
 
 #define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students.txt"
+
+enum Courses {
+    MATH,
+    ENGLISH,
+    SCIENCE,
+    HISTORY,
+    PHYSICS,
+    CHEMISTRY,
+    BIOLOGY,
+    COMPUTER_SCIENCE,
+    LITERATURE,
+    ART,
+    NUM_COURSES // Add this to keep track of the number of courses
+};
+
+extern const char* courseStrings[] = {
+        "Math",
+        "English",
+        "Science",
+        "History",
+        "Physics",
+        "Chemistry",
+        "Biology",
+        "Computer Science",
+        "Literature",
+        "Art"
+};
