@@ -430,6 +430,26 @@ void search(struct School *school) {
     printf("\n\n");
 }
 
+void updateStudent(struct School *school, struct Course *courses) {
+    char firstName[NameLength], lastName[NameLength];
+    getStudentName(firstName, lastName);
+    int level = 0, class = 0, course = 0, grade = 0;
+    getStudentLevelAndClass(&level, &class);
+    printf("Enter course number to update from:\n");
+    printf("Math: 0, English: 1, Science: 2, History: 3, Physics: 4, Chemistry: 5, Biology: 6, Computer Science: 7, Literature: 8, Art: 9\n");
+    scanf("%d", &course);
+    printf("Enter grade to update: ");
+    scanf("%d", &grade);
+    printf("course %d", courses->grades[level-1][class-1][course]->grade.grade);
+    school->students[level-1][class-1]->student.grades[course]->grade.grade = grade;
+//    Kirby
+//    Lomago
+//    10
+//    4
+//    1
+//    80
+}
+
 void avgForCourseAndLevel(struct Course *course) {
     for (int level = 0; level < Levels; level++) {
         printf("Level: %d, ", level + 1);
@@ -516,11 +536,9 @@ int main() {
                 deleteStudentFromUser(&school, &courses);
                 break;
             case OPTION_UPDATE_STUDENT:
-                // Implement update student function
-                printf("Update student function not implemented yet.\n");
+                updateStudent(&school, &courses);
                 break;
             case OPTION_SEARCH_STUDENT:
-                // Implement search student function
                 search(&school);
                 break;
             case OPTION_PRINT_TEN_BEST_STUDENTS_FOR_COURSE:
