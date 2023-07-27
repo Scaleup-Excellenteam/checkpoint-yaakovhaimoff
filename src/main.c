@@ -92,8 +92,10 @@ void getStudentName(char *firstName, char *lastName) {
 void getStudentLevelAndClass(int *level, int *class) {
     printf("Enter the student's level: ");
     scanf("%d", &*level);
+    level -= 1;
     printf("Enter the student's class: ");
     scanf("%d", &*class);
+    class -= 1;
 }
 
 void getStudentTelephone(char *telephone) {
@@ -157,11 +159,11 @@ void addStudentGrades(struct Course *courses,
 
 void addStudentToTenBestStudentsForCourse(struct TenBestStudentsForCourse *tenBestStudentsForCourse,
                                           struct StudentNode *studentForGrade, int level) {
-    for (int class = 1; class < Classes; class++) {
+    for (int class = 0; class < Classes; class++) {
         for (int grade = 0; grade < NumOfGrades; grade++) {
             if (tenBestStudentsForCourse->students[level][class][grade] == NULL ||
-                                   tenBestStudentsForCourse->students[level][class][grade]->student.grades[grade]->grade.grade <
-                                   studentForGrade->student.grades[grade]->grade.grade) {
+                tenBestStudentsForCourse->students[level][class][grade]->student.grades[grade]->grade.grade <
+                studentForGrade->student.grades[grade]->grade.grade) {
                 tenBestStudentsForCourse->students[level][class][grade] = studentForGrade;
                 break;
             }
@@ -195,9 +197,9 @@ readData(struct School *school,
                   &grades[LITERATURE], &grades[ART]) == InputLength) {
 
         struct StudentNode *studentForGrade;
-        studentForGrade = addStudent(school, firstName, lastName, telephone, level, class, grades);
-        addStudentGrades(courses, school, studentForGrade, level, class, grades);
-        addStudentToTenBestStudentsForCourse(tenBestStudentsForCourse, studentForGrade, level);
+        studentForGrade = addStudent(school, firstName, lastName, telephone, level - 1, class - 1, grades);
+        addStudentGrades(courses, school, studentForGrade, level - 1, class - 1, grades);
+        addStudentToTenBestStudentsForCourse(tenBestStudentsForCourse, studentForGrade, level - 1);
     }
     fclose(filePointer);
 }
@@ -227,7 +229,7 @@ void freeStudents(struct School *school) {
     }
 }
 
-void freeCourses(struct Course *courses){
+void freeCourses(struct Course *courses) {
     for (int i = 0; i < Levels; i++) {
         for (int j = 0; j < Classes; j++) {
             for (int k = 0; k < NumOfGrades; k++) {
@@ -243,8 +245,8 @@ void freeCourses(struct Course *courses){
 }
 
 void printStudents(struct School school) {
-    for (int level = 1; level < Levels; level++) {
-        for (int class = 1; class < Classes; class++) {
+    for (int level = 0; level < Levels; level++) {
+        for (int class = 0; class < Classes; class++) {
             struct StudentNode *node = school.students[level][class];
             if (node == NULL) {
                 continue;
@@ -252,8 +254,8 @@ void printStudents(struct School school) {
             while (node != NULL) {
                 printf("Name: %s %s\n", node->student.first_name, node->student.last_name);
                 printf("Telephone: %s\n", node->student.telephone);
-                printf("Level: %d\n", level);
-                printf("Class: %d\n", class);
+                printf("Level: %d, Class: %d\n", level + 1, class + 1);
+                printf("Grades: ");
                 for (int i = 0; i < NumOfGrades; i++) {
                     printf("%d ", node->student.grades[i]->grade.grade);
                 }
@@ -265,9 +267,9 @@ void printStudents(struct School school) {
 }
 
 void printTenBestStudentsForCourse(struct TenBestStudentsForCourse *tenBestStudentsForCourse) {
-    for (int level = 1; level < Levels; level++) {
-        for (int class = 1; class < Classes; class++) {
-            printf("Level: %d, Class: %s\n", level, courseStrings[class-1]);
+    for (int level = 0; level < Levels; level++) {
+        for (int class = 0; class < Classes; class++) {
+            printf("Level: %d, Class: %s\n", level + 1, courseStrings[class]);
             for (int grade = 0; grade < NumOfGrades; grade++) {
                 if (tenBestStudentsForCourse->students[level][class][grade] == NULL) {
                     continue;
@@ -283,8 +285,8 @@ void printTenBestStudentsForCourse(struct TenBestStudentsForCourse *tenBestStude
 
 struct StudentNode *
 searchStudentByName(struct School *school, char *firstName, char *lastName, int *levelToSave, int *classToSave) {
-    for (int level = 1; level < Levels; level++) {
-        for (int class = 1; class < Classes; class++) {
+    for (int level = 0; level < Levels; level++) {
+        for (int class = 0; class < Classes; class++) {
             struct StudentNode *node = school->students[level][class];
             while (node != NULL) {
                 if (strcmp(node->student.first_name, firstName) == 0 &&
@@ -390,6 +392,37 @@ void search(struct School *school) {
     printf("\n\n");
 }
 
+void avgForCourseAndLevel(struct Course *course) {
+    for (int level = 0; level < Levels; level++) {
+        printf("Level: %d, ", level+1);
+        for (int class = 0; class < Classes; class++) {
+            int sum = 0;
+            int count = 0;
+            for (int grade = 0; grade < NumOfGrades; grade++) {
+                struct GradeNode *gradeNode = course->grades[level][class][grade];
+                while (gradeNode != NULL) {
+                    sum += gradeNode->grade.grade;
+                    count++;
+                    gradeNode = gradeNode->next;
+                }
+            }
+            if(class%2==0)
+            {
+                printf("\n");
+            } else
+            {
+                printf("\t\t");
+            }
+            if (count == 0) {
+                printf("Class: %s, Average: 0 ", courseStrings[class]);
+            } else {
+                printf("Class: %s, Average: %f ", courseStrings[class], (float) sum / count);
+            }
+        }
+        printf("\n");
+    }
+}
+
 void addNewStudentFromUser(struct School *school, struct Course *courses) {
     char firstName[NameLength], lastName[NameLength], telephone[TelephoneLength];
     int level, class;
@@ -415,9 +448,11 @@ void printMenu() {
     printf("3: Update student\n");
     printf("4: Search student\n");
     printf("5: Print ten best students for course\n");
-    printf("6: Exit\n");
+    printf("6: Print average for every course and level\n");
+    printf("7: Exit\n");
     printf("Enter your choice: ");
 }
+
 
 int main() {
     struct School school;
@@ -450,6 +485,9 @@ int main() {
                 break;
             case OPTION_PRINT_TEN_BEST_STUDENTS_FOR_COURSE:
                 printTenBestStudentsForCourse(&tenBestStudentsForCourse);
+                break;
+            case OPTION_AVG_FOR_COURSE_AND_LEVEL:
+                avgForCourseAndLevel(&courses);
                 break;
             case OPTION_EXIT:
 
