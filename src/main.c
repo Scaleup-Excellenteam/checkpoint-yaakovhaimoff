@@ -23,6 +23,10 @@ struct TenBestStudentsForCourse {
     struct StudentNode *students[Levels][Classes][NumOfGrades];
 };
 
+struct StudentsPendingToBeExpelled {
+    struct StudentNode *students[Levels];
+};
+
 struct Grade {
     int grade;
     struct StudentNode *student;
@@ -171,13 +175,31 @@ void addStudentToTenBestStudentsForCourse(struct TenBestStudentsForCourse *tenBe
     }
 }
 
+void addStudentToStudentsPendingToBeExpelled(struct StudentsPendingToBeExpelled *studentsPendingToBeExpelled,
+                                             struct StudentNode *studentForGrade, int level) {
+    int sum = 0;
+    for (int grade = 0; grade < NumOfGrades; grade++) {
+        sum += studentForGrade->student.grades[grade]->grade.grade;
+    }
+    if (sum / NumOfGrades < PendingToBeExpelled) {
+        if (studentsPendingToBeExpelled->students[level] == NULL) {
+            studentsPendingToBeExpelled->students[level] = studentForGrade;
+        } else {
+            studentForGrade->next = studentsPendingToBeExpelled->students[level];
+            studentsPendingToBeExpelled->students[level] = studentForGrade;
+        }
+    }
+}
+
 void
 readData(struct School *school,
          struct Course *courses,
-         struct TenBestStudentsForCourse *tenBestStudentsForCourse) {
+         struct TenBestStudentsForCourse *tenBestStudentsForCourse,
+         struct StudentsPendingToBeExpelled *studentsPendingToBeExpelled) {
     memset(school->students, 0, sizeof(school->students));
     memset(courses->grades, 0, sizeof(courses->grades));
     memset(tenBestStudentsForCourse->students, 0, sizeof(tenBestStudentsForCourse->students));
+    memset(studentsPendingToBeExpelled->students, 0, sizeof(studentsPendingToBeExpelled->students));
 
     FILE *filePointer;
     filePointer = fopen(FILE_NAME, "r");
@@ -200,6 +222,7 @@ readData(struct School *school,
         studentForGrade = addStudent(school, firstName, lastName, telephone, level - 1, class - 1, grades);
         addStudentGrades(courses, school, studentForGrade, level - 1, class - 1, grades);
         addStudentToTenBestStudentsForCourse(tenBestStudentsForCourse, studentForGrade, level - 1);
+        addStudentToStudentsPendingToBeExpelled(studentsPendingToBeExpelled, studentForGrade, level - 1);
     }
     fclose(filePointer);
 }
@@ -280,6 +303,21 @@ void printTenBestStudentsForCourse(struct TenBestStudentsForCourse *tenBestStude
             }
             printf("\n");
         }
+    }
+}
+
+void printWorstStudent(struct StudentsPendingToBeExpelled *studentsPendingToBeExpelled) {
+    for (int level = 0; level < Levels; level++) {
+        if (studentsPendingToBeExpelled->students[level] == NULL) {
+            continue;
+        }
+        printf("Level: %d\n", level + 1);
+        while (studentsPendingToBeExpelled->students[level] != NULL) {
+            printf("%s %s\n", studentsPendingToBeExpelled->students[level]->student.first_name,
+                   studentsPendingToBeExpelled->students[level]->student.last_name);
+            studentsPendingToBeExpelled->students[level] = studentsPendingToBeExpelled->students[level]->next;
+        }
+        printf("\n");
     }
 }
 
@@ -394,7 +432,7 @@ void search(struct School *school) {
 
 void avgForCourseAndLevel(struct Course *course) {
     for (int level = 0; level < Levels; level++) {
-        printf("Level: %d, ", level+1);
+        printf("Level: %d, ", level + 1);
         for (int class = 0; class < Classes; class++) {
             int sum = 0;
             int count = 0;
@@ -406,11 +444,9 @@ void avgForCourseAndLevel(struct Course *course) {
                     gradeNode = gradeNode->next;
                 }
             }
-            if(class%2==0)
-            {
+            if (class % 2 == 0) {
                 printf("\n");
-            } else
-            {
+            } else {
                 printf("\t\t");
             }
             if (count == 0) {
@@ -423,7 +459,8 @@ void avgForCourseAndLevel(struct Course *course) {
     }
 }
 
-void addNewStudentFromUser(struct School *school, struct Course *courses) {
+void addNewStudentFromUser(struct School *school, struct Course *courses,
+                           struct TenBestStudentsForCourse *tenBestStudentsForCourse) {
     char firstName[NameLength], lastName[NameLength], telephone[TelephoneLength];
     int level, class;
     getStudentName(firstName, lastName);
@@ -438,6 +475,7 @@ void addNewStudentFromUser(struct School *school, struct Course *courses) {
     struct StudentNode *studentForGrade;
     studentForGrade = addStudent(school, firstName, lastName, telephone, level, class, grades);
     addStudentGrades(courses, school, studentForGrade, level, class, grades);
+    addStudentToTenBestStudentsForCourse(tenBestStudentsForCourse, studentForGrade, level);
 }
 
 void printMenu() {
@@ -449,7 +487,8 @@ void printMenu() {
     printf("4: Search student\n");
     printf("5: Print ten best students for course\n");
     printf("6: Print average for every course and level\n");
-    printf("7: Exit\n");
+    printf("7: Print students pending to be expelled\n");
+    printf("8: Exit\n");
     printf("Enter your choice: ");
 }
 
@@ -458,7 +497,8 @@ int main() {
     struct School school;
     struct Course courses;
     struct TenBestStudentsForCourse tenBestStudentsForCourse;
-    readData(&school, &courses, &tenBestStudentsForCourse);
+    struct StudentsPendingToBeExpelled studentsPendingToBeExpelled;
+    readData(&school, &courses, &tenBestStudentsForCourse, &studentsPendingToBeExpelled);
 
     int choice;
     while (1) {
@@ -470,7 +510,7 @@ int main() {
                 printStudents(school);
                 break;
             case OPTION_ADD_STUDENT:
-                addNewStudentFromUser(&school, &courses);
+                addNewStudentFromUser(&school, &courses, &tenBestStudentsForCourse);
                 break;
             case OPTION_DELETE_STUDENT:
                 deleteStudentFromUser(&school, &courses);
@@ -488,6 +528,9 @@ int main() {
                 break;
             case OPTION_AVG_FOR_COURSE_AND_LEVEL:
                 avgForCourseAndLevel(&courses);
+                break;
+            case OPTION_PRINT_WORST_STUDENT:
+                printWorstStudent(&studentsPendingToBeExpelled);
                 break;
             case OPTION_EXIT:
 
