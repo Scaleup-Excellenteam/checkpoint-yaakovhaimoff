@@ -23,8 +23,13 @@ struct TenBestStudentsForCourse {
     struct StudentNode *students[Levels][Classes][NumOfGrades];
 };
 
+struct StudentsPendingToBeExpelledNode {
+    struct StudentNode *student;
+    struct StudentsPendingToBeExpelledNode *next;
+};
+
 struct StudentsPendingToBeExpelled {
-    struct StudentNode *students[Levels];
+    struct StudentsPendingToBeExpelledNode *studentsPendingToBeExpelledNode[Levels];
 };
 
 struct Grade {
@@ -38,7 +43,6 @@ struct GradeNode {
 };
 
 struct Course {
-    char *name;
     struct GradeNode *grades[Levels][Classes][NumOfGrades];
 };
 
@@ -60,6 +64,16 @@ struct GradeNode *mallocGradeNode() {
     }
     gradeNode->next = NULL;
     return gradeNode;
+}
+
+struct StudentsPendingToBeExpelledNode *mallocStudentsPendingToBeExpelledNode() {
+    struct StudentsPendingToBeExpelledNode *mallocStudentsPendingToBeExpelledNode =
+            malloc(sizeof(struct StudentsPendingToBeExpelledNode));
+    if (mallocStudentsPendingToBeExpelledNode == NULL) {
+        printf("Error: malloc failed in mallocStudentsPendingToBeExpelled\n");
+        exit(1);
+    }
+    return mallocStudentsPendingToBeExpelledNode;
 }
 
 void trimWhiteSpace(char *str) {
@@ -96,10 +110,10 @@ void getStudentName(char *firstName, char *lastName) {
 void getStudentLevelAndClass(int *level, int *class) {
     printf("Enter the student's level: ");
     scanf("%d", &*level);
-    level -= 1;
+    *level -= 1;
     printf("Enter the student's class: ");
     scanf("%d", &*class);
-    class -= 1;
+    *class -= 1;
 }
 
 void getStudentTelephone(char *telephone) {
@@ -122,41 +136,38 @@ void assignGradeData(struct Grade *grade, int gradeValue, struct StudentNode *st
 struct StudentNode *
 addStudent(struct School *school,
            char *firstName, char *lastName, char *telephone,
-           int level, int class, int *grades) {
-    struct StudentNode *studentForGrade;
+           int level, int class) {
     if (school->students[level][class] == NULL) {
         // If there are no students for the given level and class, add the new student as the first student.
         school->students[level][class] = mallocStudentNode();
         assignStudentData(&school->students[level][class]->student, firstName, lastName, telephone);
         school->students[level][class]->next = NULL; // Set next to NULL as this is the only student for now.
-        studentForGrade = school->students[level][class]; // Set the studentForGrade to the first student.
     } else {
         // If there are existing students, create a new student node and link it to the current first student.
         struct StudentNode *newStudent = mallocStudentNode();
         assignStudentData(&newStudent->student, firstName, lastName, telephone);
         newStudent->next = school->students[level][class];
         school->students[level][class] = newStudent; // Update the first student to be the new student.
-        studentForGrade = newStudent; // Set the studentForGrade to the new student.
     }
-    return studentForGrade;
+    return school->students[level][class];
 }
 
 void addStudentGrades(struct Course *courses,
                       struct School *school,
                       struct StudentNode *studentForGrade,
                       int level, int class, const int *grades) {
-    for (int i = 0; i < NumOfGrades; i++) {
-        if (courses->grades[level][class][i] == NULL) {
-            courses->grades[level][class][i] = mallocGradeNode();
-            assignGradeData(&courses->grades[level][class][i]->grade, grades[i], studentForGrade);
-            courses->grades[level][class][i]->next = NULL;
-            school->students[level][class]->student.grades[i] = courses->grades[level][class][i];
+    for (int course = 0; course < NumOfGrades; course++) {
+        if (courses->grades[level][class][course] == NULL) {
+            courses->grades[level][class][course] = mallocGradeNode();
+            assignGradeData(&courses->grades[level][class][course]->grade, grades[course], studentForGrade);
+            courses->grades[level][class][course]->next = NULL;
+            school->students[level][class]->student.grades[course] = courses->grades[level][class][course];
         } else {
             struct GradeNode *newGrade = mallocGradeNode();
-            assignGradeData(&newGrade->grade, grades[i], studentForGrade);
-            newGrade->next = courses->grades[level][class][i];
-            courses->grades[level][class][i] = newGrade;
-            school->students[level][class]->student.grades[i] = newGrade;
+            assignGradeData(&newGrade->grade, grades[course], studentForGrade);
+            newGrade->next = courses->grades[level][class][course];
+            courses->grades[level][class][course] = newGrade;
+            school->students[level][class]->student.grades[course] = newGrade;
         }
     }
 }
@@ -182,11 +193,15 @@ void addStudentToStudentsPendingToBeExpelled(struct StudentsPendingToBeExpelled 
         sum += studentForGrade->student.grades[grade]->grade.grade;
     }
     if (sum / NumOfGrades < PendingToBeExpelled) {
-        if (studentsPendingToBeExpelled->students[level] == NULL) {
-            studentsPendingToBeExpelled->students[level] = studentForGrade;
+        if (studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level] == NULL) {
+            studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level] = mallocStudentsPendingToBeExpelledNode();
+            studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level]->student = studentForGrade;
+            studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level]->next = NULL;
         } else {
-            studentForGrade->next = studentsPendingToBeExpelled->students[level];
-            studentsPendingToBeExpelled->students[level] = studentForGrade;
+            struct StudentsPendingToBeExpelledNode *newStudentPendingToBeExpelled = mallocStudentsPendingToBeExpelledNode();
+            newStudentPendingToBeExpelled->next = studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level];
+            newStudentPendingToBeExpelled->student = studentForGrade;
+            studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level] = newStudentPendingToBeExpelled;
         }
     }
 }
@@ -199,7 +214,8 @@ readData(struct School *school,
     memset(school->students, 0, sizeof(school->students));
     memset(courses->grades, 0, sizeof(courses->grades));
     memset(tenBestStudentsForCourse->students, 0, sizeof(tenBestStudentsForCourse->students));
-    memset(studentsPendingToBeExpelled->students, 0, sizeof(studentsPendingToBeExpelled->students));
+    memset(studentsPendingToBeExpelled->studentsPendingToBeExpelledNode, 0,
+           sizeof(studentsPendingToBeExpelled->studentsPendingToBeExpelledNode));
 
     FILE *filePointer;
     filePointer = fopen(FILE_NAME, "r");
@@ -211,15 +227,14 @@ readData(struct School *school,
 
     char firstName[NameLength], lastName[NameLength], telephone[TelephoneLength];
     int level, class, grades[NumOfGrades];
-
-    while (fscanf(filePointer, "%s %s %s %d %d %d %d %d %d %d %d %d %d %d %d", firstName, lastName, telephone, &level,
-                  &class,
+    while (fscanf(filePointer, "%s %s %s %d %d %d %d %d %d %d %d %d %d %d %d",
+                  firstName, lastName, telephone, &level, &class,
                   &grades[MATH], &grades[ENGLISH], &grades[SCIENCE], &grades[HISTORY], &grades[PHYSICS],
                   &grades[CHEMISTRY], &grades[BIOLOGY], &grades[COMPUTER_SCIENCE],
                   &grades[LITERATURE], &grades[ART]) == InputLength) {
 
         struct StudentNode *studentForGrade;
-        studentForGrade = addStudent(school, firstName, lastName, telephone, level - 1, class - 1, grades);
+        studentForGrade = addStudent(school, firstName, lastName, telephone, level - 1, class - 1);
         addStudentGrades(courses, school, studentForGrade, level - 1, class - 1, grades);
         addStudentToTenBestStudentsForCourse(tenBestStudentsForCourse, studentForGrade, level - 1);
         addStudentToStudentsPendingToBeExpelled(studentsPendingToBeExpelled, studentForGrade, level - 1);
@@ -232,12 +247,8 @@ void freeStudentList(struct StudentNode *node) {
     while (node != NULL) {
         struct StudentNode *temp = node;
         node = node->next;
-
-        // Free first_name and last_name strings
         free(temp->student.first_name);
         free(temp->student.last_name);
-
-        // Free the node itself
         free(temp);
     }
 }
@@ -248,6 +259,23 @@ void freeStudents(struct School *school) {
             struct StudentNode *node = school->students[i][j];
             freeStudentList(node);
             school->students[i][j] = NULL;
+        }
+    }
+}
+
+void printGrades(struct Course *courses) {
+    for (int i = 0; i < Levels; i++) {
+        for (int j = 0; j < Classes; j++) {
+            printf("Level %d, class %d\n", i + 1, j + 1);
+            for (int k = 0; k < NumOfGrades; k++) {
+                struct GradeNode *node = courses->grades[i][j][k];
+                while (node != NULL) {
+                    printf("%d ", node->grade.grade);
+                    node = node->next;
+                }
+                printf("\n");
+            }
+            printf("\n");
         }
     }
 }
@@ -289,6 +317,17 @@ void printStudents(struct School school) {
     }
 }
 
+void freeWorstStudents(struct StudentsPendingToBeExpelled *studentsPendingToBeExpelled) {
+    for (int level = 0; level < Levels; level++) {
+        struct StudentsPendingToBeExpelledNode *node = studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level];
+        while (node != NULL) {
+            struct StudentsPendingToBeExpelledNode *temp = node;
+            node = node->next;
+            free(temp);
+        }
+    }
+}
+
 void printTenBestStudentsForCourse(struct TenBestStudentsForCourse *tenBestStudentsForCourse) {
     for (int level = 0; level < Levels; level++) {
         for (int class = 0; class < Classes; class++) {
@@ -308,14 +347,15 @@ void printTenBestStudentsForCourse(struct TenBestStudentsForCourse *tenBestStude
 
 void printWorstStudent(struct StudentsPendingToBeExpelled *studentsPendingToBeExpelled) {
     for (int level = 0; level < Levels; level++) {
-        if (studentsPendingToBeExpelled->students[level] == NULL) {
+        if (studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level] == NULL) {
             continue;
         }
         printf("Level: %d\n", level + 1);
-        while (studentsPendingToBeExpelled->students[level] != NULL) {
-            printf("%s %s\n", studentsPendingToBeExpelled->students[level]->student.first_name,
-                   studentsPendingToBeExpelled->students[level]->student.last_name);
-            studentsPendingToBeExpelled->students[level] = studentsPendingToBeExpelled->students[level]->next;
+        while (studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level] != NULL) {
+            printf("%s %s\n",
+                   studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level]->student->student.first_name,
+                   studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level]->student->student.last_name);
+            studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level] = studentsPendingToBeExpelled->studentsPendingToBeExpelledNode[level]->next;
         }
         printf("\n");
     }
@@ -420,8 +460,8 @@ void search(struct School *school) {
     }
 
     printf("For %s %s:\n", student->student.first_name, student->student.last_name);
-    printf("Level: %d\n", level);
-    printf("Class: %d\n", class);
+    printf("Level: %d\n", level + 1);
+    printf("Class: %d\n", class + 1);
     printf("Telephone: %s\n", student->student.telephone);
     printf("Grades: ");
     for (int i = 0; i < NumOfGrades; i++) {
@@ -440,8 +480,8 @@ void updateStudent(struct School *school, struct Course *courses) {
     scanf("%d", &course);
     printf("Enter grade to update: ");
     scanf("%d", &grade);
-    printf("course %d", courses->grades[level-1][class-1][course]->grade.grade);
-    school->students[level-1][class-1]->student.grades[course]->grade.grade = grade;
+    printf("course %d", courses->grades[level - 1][class - 1][course]->grade.grade);
+    school->students[level - 1][class - 1]->student.grades[course]->grade.grade = grade;
 //    Kirby
 //    Lomago
 //    10
@@ -493,7 +533,7 @@ void addNewStudentFromUser(struct School *school, struct Course *courses,
         scanf("%d", &grades[i]);
     }
     struct StudentNode *studentForGrade;
-    studentForGrade = addStudent(school, firstName, lastName, telephone, level, class, grades);
+    studentForGrade = addStudent(school, firstName, lastName, telephone, level, class);
     addStudentGrades(courses, school, studentForGrade, level, class, grades);
     addStudentToTenBestStudentsForCourse(tenBestStudentsForCourse, studentForGrade, level);
 }
@@ -527,6 +567,7 @@ int main() {
 
         switch (choice) {
             case OPTION_PRINT_STUDENTS:
+//                printGrades(&courses);
                 printStudents(school);
                 break;
             case OPTION_ADD_STUDENT:
@@ -551,11 +592,9 @@ int main() {
                 printWorstStudent(&studentsPendingToBeExpelled);
                 break;
             case OPTION_EXIT:
-
                 freeStudents(&school);
-
                 freeCourses(&courses);
-
+                freeWorstStudents(&studentsPendingToBeExpelled);
                 return 0;
             default:
                 printf("Invalid choice. Please try again.\n");

@@ -7,6 +7,9 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <stdbool.h>
+//#include <openssl/conf.h>
+//#include <openssl/evp.h>
+//#include <openssl/err.h>
 
 
 #define Levels 12
@@ -28,8 +31,8 @@
 #define OPTION_PRINT_WORST_STUDENT 7
 #define OPTION_EXIT 8
 
-//#define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students_with_class.txt"
-#define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students.txt"
+#define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students_with_class.txt"
+//#define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students.txt"
 
 enum Courses {
     MATH,
