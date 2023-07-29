@@ -47,16 +47,3 @@ enum Courses {
     ART,
     NUM_COURSES // Add this to keep track of the number of courses
 };
-
-const char* courseStrings[] = {
-        "Math",
-        "English",
-        "Science",
-        "History",
-        "Physics",
-        "Chemistry",
-        "Biology",
-        "Computer Science",
-        "Literature",
-        "Art"
-};
