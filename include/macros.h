@@ -7,10 +7,13 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <stdbool.h>
-//#include <openssl/conf.h>
-//#include <openssl/evp.h>
-//#include <openssl/err.h>
+#include <openssl/conf.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#include <openssl/rand.h>
 
+#define KEY_SIZE 32   // 256 bits for AES-256
+#define IV_SIZE 16    // 128 bits for AES-256 CBC
 
 #define Levels 12
 #define Classes 10
@@ -19,6 +22,14 @@
 #define NameLength 100
 #define InputLength 15
 #define PendingToBeExpelled 65
+#define BUFFER_SIZE 1024
+
+#define FIRST_NAME 0
+#define LAST_NAME 1
+#define TELEPHONE 2
+#define LEVEL 3
+#define CLASS 4
+#define GRADES 5
 
 
 #define OPTION_PRINT_STUDENTS 0
@@ -32,6 +43,7 @@
 #define OPTION_EXIT 8
 
 #define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students_with_class.txt"
+#define ENCRYPT_FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/encryptFile.txt"
 //#define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students.txt"
 
 enum Courses {
