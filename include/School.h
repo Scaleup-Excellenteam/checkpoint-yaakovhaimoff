@@ -65,6 +65,8 @@ void freeStudents(struct School *);
 
 void printStudents(struct School);
 
+void printCountStudents(struct School);
+
 struct StudentNode *searchStudentInLevelClass(struct StudentNode *,
                                               char *, char *);
 

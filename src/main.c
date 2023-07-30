@@ -20,11 +20,12 @@ readData(struct School *school,
         exit(1);
     }
 
-    unsigned char decrypted_line[KEY_SIZE],
+    unsigned char
             ciphertext[BUFFER_SIZE];
     char data[InputLength][BUFFER_SIZE] = {0}, *f;
     int grades[NumOfGrades], ciphertext_len, decryptedtext_len;
-
+    char decrypted_line_copy[BUFFER_SIZE];
+    int count = 0;
     // Read data from the encrypted file in binary mode and decrypt it
     while (fread(&ciphertext_len, sizeof(int), 1, decryptFilePointer) == 1) {
         // Read the encrypted data based on the size read
@@ -34,23 +35,20 @@ readData(struct School *school,
             exit(1);
         }
 
+        unsigned char decrypted_line[KEY_SIZE];
         // Decrypt the line
         decryptedtext_len = decrypt(ciphertext, ciphertext_len, key, iv, decrypted_line);
-
-        // Print the decrypted line
-        char decrypted_line_copy[BUFFER_SIZE];
 
         sprintf(decrypted_line_copy, "%.*s ", decryptedtext_len, decrypted_line);
         trimWhiteSpace(decrypted_line_copy);
 
-        f = strtok((char *)decrypted_line_copy, " ");
+        f = strtok((char *) decrypted_line_copy, " ");
 
         for (int i = 0; f != NULL; i++) {
             strcpy(data[i], f);
             f = strtok(NULL, " ");
 //            printf("data: %s, ", data[i]);
         }
-        printf("\n");
 
         int level = atoi(data[LEVEL]);
         int class = atoi(data[CLASS]);
@@ -71,7 +69,7 @@ readData(struct School *school,
         addStudentToStudentsPendingToBeExpelled(studentsPendingToBeExpelled, studentForGrade, level - 1);
 //        printf("here5\n");
     }
-    int i =0;
+    printf("yes\n");
     // Close the decrypted file
     fclose(decryptFilePointer);
 }
@@ -86,7 +84,8 @@ void printMenu() {
     printf("5: Print ten best students for course\n");
     printf("6: Print average for every course and level\n");
     printf("7: Print students pending to be expelled\n");
-    printf("8: Exit\n");
+    printf("8: Print students count\n");
+    printf("9: Exit\n");
     printf("Enter your choice: ");
 }
 
@@ -100,44 +99,47 @@ int main() {
     encryptFileAndSaveToFile();
     readData(&school, &courses, &tenBestStudentsForCourse, &studentsPendingToBeExpelled);
 
-//    int choice;
-//    while (1) {
-//        printMenu();
-//        scanf("%d", &choice);
-//
-//        switch (choice) {
-//            case OPTION_PRINT_STUDENTS:
-////                printGrades(&courses);
-//                printStudents(school);
-//                break;
-//            case OPTION_ADD_STUDENT:
-//                addNewStudentFromUser(&school, &courses, &tenBestStudentsForCourse);
-//                break;
-//            case OPTION_DELETE_STUDENT:
-//                deleteStudentFromUser(&school, &courses);
-//                break;
-//            case OPTION_UPDATE_STUDENT:
-//                updateStudent(&school, &courses);
-//                break;
-//            case OPTION_SEARCH_STUDENT:
-//                search(&school);
-//                break;
-//            case OPTION_PRINT_TEN_BEST_STUDENTS_FOR_COURSE:
-//                printTenBestStudentsForCourse(&tenBestStudentsForCourse);
-//                break;
-//            case OPTION_AVG_FOR_COURSE_AND_LEVEL:
-//                avgForCourseAndLevel(&courses);
-//                break;
-//            case OPTION_PRINT_WORST_STUDENT:
-//                printWorstStudent(&studentsPendingToBeExpelled);
-//                break;
-//            case OPTION_EXIT:
-//                freeStudents(&school);
-//                freeCourses(&courses);
-//                freeWorstStudents(&studentsPendingToBeExpelled);
-//                return 0;
-//            default:
-//                printf("Invalid choice. Please try again.\n");
-//        }
-//    }
+    int choice;
+    while (1) {
+        printMenu();
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case OPTION_PRINT_STUDENTS:
+//                printGrades(&courses);
+                printStudents(school);
+                break;
+            case OPTION_ADD_STUDENT:
+                addNewStudentFromUser(&school, &courses, &tenBestStudentsForCourse);
+                break;
+            case OPTION_DELETE_STUDENT:
+                deleteStudentFromUser(&school, &courses);
+                break;
+            case OPTION_UPDATE_STUDENT:
+                updateStudent(&school, &courses);
+                break;
+            case OPTION_SEARCH_STUDENT:
+                search(&school);
+                break;
+            case OPTION_PRINT_TEN_BEST_STUDENTS_FOR_COURSE:
+                printTenBestStudentsForCourse(&tenBestStudentsForCourse);
+                break;
+            case OPTION_AVG_FOR_COURSE_AND_LEVEL:
+                avgForCourseAndLevel(&courses);
+                break;
+            case OPTION_PRINT_WORST_STUDENT:
+                printWorstStudent(&studentsPendingToBeExpelled);
+                break;
+            case OPTION_PRINT_STUDENTS_COUNT:
+                printCountStudents(school);
+                break;
+            case OPTION_EXIT:
+                freeStudents(&school);
+                freeCourses(&courses);
+                freeWorstStudents(&studentsPendingToBeExpelled);
+                return 0;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    }
 }

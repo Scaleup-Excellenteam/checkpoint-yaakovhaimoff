@@ -47,6 +47,7 @@ void init_openssl() {
 
 void handleErrors(void)
 {
+    printf("Error occurred.\n");
     ERR_print_errors_fp(stderr);
     abort();
 }
@@ -135,7 +136,6 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
     if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
         handleErrors();
     plaintext_len += len;
-//    ciphertext[ciphertext_len] = '\0';
 
     /* Clean up */
     EVP_CIPHER_CTX_free(ctx);

@@ -168,6 +168,20 @@ void printStudents(struct School school) {
     }
 }
 
+void printCountStudents(struct School school) {
+    int count = 0;
+    for (int level = 0; level < Levels; level++) {
+        for (int class = 0; class < Classes; class++) {
+            struct StudentNode *node = school.students[level][class];
+            while (node != NULL) {
+                count++;
+                node = node->next;
+            }
+        }
+    }
+    printf("Number of students: %d\n", count);
+}
+
 struct StudentNode *searchStudentInLevelClass(struct StudentNode *node, char *firstName, char *lastName) {
     while (node != NULL) {
         if (strcmp(node->student.first_name, firstName) == 0

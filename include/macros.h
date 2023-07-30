@@ -40,7 +40,8 @@
 #define OPTION_PRINT_TEN_BEST_STUDENTS_FOR_COURSE 5
 #define OPTION_AVG_FOR_COURSE_AND_LEVEL 6
 #define OPTION_PRINT_WORST_STUDENT 7
-#define OPTION_EXIT 8
+#define OPTION_PRINT_STUDENTS_COUNT 8
+#define OPTION_EXIT 9
 
 #define FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/students_with_class.txt"
 #define ENCRYPT_FILE_NAME "/Users/yaakovhaimoff/Desktop/school/year_3/semester2/excellents/bootcamp/school_db/encryptFile.txt"
